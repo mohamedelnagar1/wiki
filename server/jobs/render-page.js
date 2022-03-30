@@ -44,6 +44,30 @@ module.exports = async (pageId) => {
     $('h1,h2,h3,h4,h5,h6').each((idx, el) => {
       const depth = _.toSafeInteger(el.name.substring(1)) - (isStrict ? 1 : 2)
       let leafPathError = false
+      let nextSibling = $(el).next()
+
+      /** Extract Summary
+       * Extraxt summary text for the underline sub-header to help while indexing page content
+       * Approach:
+       * Get markup of next elements to the next header.
+       * Remove markup using regex
+       */
+
+      let summary = ''
+
+      while (true) {
+        if (!nextSibling || !nextSibling.length || nextSibling.is('h2,h3,h4,h5')) {
+          break
+        }
+
+        let content = nextSibling.html()
+
+        summary = summary + ' ' + content.replace(/(<([^>]+)>)/gi, ' ').trim()
+
+        nextSibling = $(nextSibling).next()
+      }
+
+      /* Extract Summary - End */
 
       const leafPath = _.reduce(_.times(depth), (curPath, curIdx) => {
         if (_.has(toc, curPath)) {
@@ -65,6 +89,7 @@ module.exports = async (pageId) => {
       _.get(toc, leafPath).push({
         title: _.trim($(el).text()),
         anchor: leafSlug,
+        summary: summary.trim(),
         children: []
       })
     })
