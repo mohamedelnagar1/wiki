@@ -1,6 +1,5 @@
 
 const gql = require('graphql')
-const GraphQLJSON = require("graphql-type-json");
 
 module.exports = {
   Date: new gql.GraphQLScalarType({
@@ -18,6 +17,5 @@ module.exports = {
       }
       return new Date(ast.value)
     }
-  }),
-  JSON: GraphQLJSON
+  })
 }
