@@ -42,6 +42,16 @@ type PageQuery {
     authorId: Int
   ): [PageListItem!]! @auth(requires: ["manage:system", "read:pages"])
 
+  listToC(
+    limit: Int
+    orderBy: PageOrderBy
+    orderByDirection: PageOrderByDirection
+    tags: [String!]
+    locale: String
+    creatorId: Int
+    authorId: Int
+  ): [PageToCListItem!]! @auth(requires: ["manage:system", "read:pages"])
+
   single(
     id: Int!
   ): Page @auth(requires: ["read:pages", "manage:system"])
@@ -269,6 +279,23 @@ type PageListItem {
   locale: String!
   title: String
   description: String
+  contentType: String!
+  isPublished: Boolean!
+  isPrivate: Boolean!
+  privateNS: String
+  createdAt: Date!
+  updatedAt: Date!
+  tags: [String]
+}
+
+
+type PageToCListItem {
+  id: Int!
+  path: String!
+  locale: String!
+  title: String
+  description: String
+  toc: String
   contentType: String!
   isPublished: Boolean!
   isPrivate: Boolean!

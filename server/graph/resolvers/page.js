@@ -147,6 +147,83 @@ module.exports = {
       return results
     },
     /**
+     * LIST PAGES with ToC
+     */
+     async listToC (obj, args, context, info) {
+      let results = await WIKI.models.pages.query().column([
+        'pages.id',
+        'path',
+        { locale: 'localeCode' },
+        'title',
+        'description',
+        'toc',
+        'isPublished',
+        'isPrivate',
+        'privateNS',
+        'contentType',
+        'createdAt',
+        'updatedAt'
+      ])
+        .withGraphJoined('tags')
+        .modifyGraph('tags', builder => {
+          builder.select('tag')
+        })
+        .modify(queryBuilder => {
+          if (args.limit) {
+            queryBuilder.limit(args.limit)
+          }
+          if (args.locale) {
+            queryBuilder.where('localeCode', args.locale)
+          }
+          if (args.creatorId && args.authorId && args.creatorId > 0 && args.authorId > 0) {
+            queryBuilder.where(function () {
+              this.where('creatorId', args.creatorId).orWhere('authorId', args.authorId)
+            })
+          } else {
+            if (args.creatorId && args.creatorId > 0) {
+              queryBuilder.where('creatorId', args.creatorId)
+            }
+            if (args.authorId && args.authorId > 0) {
+              queryBuilder.where('authorId', args.authorId)
+            }
+          }
+          if (args.tags && args.tags.length > 0) {
+            queryBuilder.whereIn('tags.tag', args.tags.map(t => _.trim(t).toLowerCase()))
+          }
+          const orderDir = args.orderByDirection === 'DESC' ? 'desc' : 'asc'
+          switch (args.orderBy) {
+            case 'CREATED':
+              queryBuilder.orderBy('createdAt', orderDir)
+              break
+            case 'PATH':
+              queryBuilder.orderBy('path', orderDir)
+              break
+            case 'TITLE':
+              queryBuilder.orderBy('title', orderDir)
+              break
+            case 'UPDATED':
+              queryBuilder.orderBy('updatedAt', orderDir)
+              break
+            default:
+              queryBuilder.orderBy('pages.id', orderDir)
+              break
+          }
+        })
+      results = _.filter(results, r => {
+        return WIKI.auth.checkAccess(context.req.user, ['read:pages'], {
+          path: r.path,
+          locale: r.locale
+        })
+      }).map(r => ({
+        ...r,
+        tags: _.map(r.tags, 'tag')
+      }))
+      if (args.tags && args.tags.length > 0) {
+        results = _.filter(results, r => _.every(args.tags, t => _.includes(r.tags, t)))
+      }
+      return results
+    },
+    /**
      * FETCH SINGLE PAGE
      */
     async single (obj, args, context, info) {
